@@ -1,0 +1,15 @@
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: mcp-uk-open-data:latest
+    working_dir: /app
+    command: ["python", "-m", "mcp_uk_open_data.server"]
+    stdin_open: true
+    tty: true
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./:/app

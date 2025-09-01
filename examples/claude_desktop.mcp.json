@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "uk-open-data": {
+      "command": "docker",
+      "args": ["compose","run","--rm","mcp-server"],
+      "env": {}
+    }
+  }
+}
