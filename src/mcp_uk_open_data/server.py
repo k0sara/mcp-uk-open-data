@@ -1,11 +1,12 @@
 import asyncio, os, requests
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field, HttpUrl
-from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("uk-open-data")
 
 LOG_LEVEL = os.getenv("LOG_LEVEL","INFO")
 ALLOWED = {"data.gov.uk","ons.gov.uk","statistics.gov.uk"}
-srv = Server("uk-open-data")
 
 def _allowed(url:str)->bool:
     from urllib.parse import urlparse
@@ -22,10 +23,10 @@ class DatasetShowArgs(BaseModel):
 class FetchJsonArgs(BaseModel):
     url: HttpUrl
 
-@srv.tool()
+@mcp.tool()
 def ping()->str: return "pong"
 
-@srv.tool()
+@mcp.tool()
 def search_data_gov_uk(args: SearchArgs)->List[Dict[str,Any]]:
     r = requests.get("https://data.gov.uk/api/3/action/package_search",
                      params={"q":args.query,"rows":args.rows}, timeout=30)
@@ -41,23 +42,24 @@ def search_data_gov_uk(args: SearchArgs)->List[Dict[str,Any]]:
         })
     return out
 
-@srv.tool()
+@mcp.tool()
 def dataset_show(args: DatasetShowArgs)->Dict[str,Any]:
     r = requests.get("https://data.gov.uk/api/3/action/package_show",
                      params={"id":args.id}, timeout=30)
     r.raise_for_status()
     return r.json().get("result",{})
 
-@srv.tool()
+@mcp.tool()
 def fetch_json(args: FetchJsonArgs)->Dict[str,Any]:
     url = str(args.url)
     if not _allowed(url): raise ValueError("URL not in allow-list")
     r = requests.get(url, timeout=30); r.raise_for_status()
     return r.json()
 
-async def amain(): 
-    if LOG_LEVEL in ("INFO","DEBUG"): print("[mcp-uk-open-data] starting stdio...", flush=True)
-    await srv.run_stdio()
+def main():
+    print("[mcp-uk-open-data] starting FastMCP stdio...", flush=True)
+    mcp.run()   # <-- not run_stdio()
 
-def main(): asyncio.run(amain())
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
+
